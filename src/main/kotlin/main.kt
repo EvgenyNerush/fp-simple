@@ -1,3 +1,7 @@
+import jetbrains.letsPlot.export.ggsave
+import jetbrains.letsPlot.geom.geomLine
+import jetbrains.letsPlot.geom.geomPoint
+import jetbrains.letsPlot.letsPlot
 import kotlin.math.PI
 import kotlin.math.pow
 import kotlin.math.sin
@@ -58,7 +62,7 @@ fun main() {
     // Мы пользовались множеством промежуточных переменных (типы которых были
     // всегда разными), однако нашу программу можно написать очень ясно и коротко,
     // используя оператор точки (доступ к функции-члену) вместо композиции функций
-    val m: Int = 1000
+    val m: Int = 2000
     val qs = DoubleArray(m)
     val ws = qs
         .map {_ -> Pair(Random.nextDouble(), Random.nextDouble())}
@@ -73,4 +77,25 @@ fun main() {
         .foldRight(0.0, Double::plus) / ws.size
 
     println("mu = ${mean}, sigma = ${sqrt(dispersion)}")
+
+    // Осталось построить функцию распределения для наших чисел, для этого
+    // их нужно раскидать по корзинкам. Сделаем это не самым быстрым способом,
+    // но зато просто и понятно.
+    val k: Int = 10 // число корзинок
+    val dx: Double = 1 / k.toDouble()
+    // here indexes start from 0:
+    val binCenters = List(k) {i -> i.toDouble() / k.toDouble() + 0.5 * dx}
+    val binNumbers = binCenters
+        .map {xb -> ws.filter {x -> x > xb - 0.5 * dx && x <= xb + 0.5 * dx}
+                      .size}
+
+    println("binCenters = ${binCenters}")
+    println("binNumbers = ${binNumbers}")
+
+    // Теперь - график
+    val data = mapOf<String, Any>("xvals" to binCenters, "yvals" to binNumbers)
+    val fig = letsPlot(data) +
+            geomLine() {x = "xvals"; y = "yvals"} +
+            geomPoint() {x = "xvals"; y = "yvals"}
+    ggsave(fig, "plot.png")
 }
